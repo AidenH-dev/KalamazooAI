@@ -22,10 +22,10 @@ const Chatbot = () => {
     // Handle sending the chat message (and file, if one was selected)
     const handleSend = async (e) => {
         e.preventDefault();
-        if (!message.trim() && !uploadedFile) return; // nothing to send
-
+        if (!message.trim() && !uploadedFile) return; // Prevent sending empty messages
+    
         let docContent = documentContent;
-
+    
         // If a file is selected, upload it first
         if (uploadedFile) {
             setUploadLoading(true);
@@ -36,35 +36,48 @@ const Chatbot = () => {
                 body: formData,
             });
             const uploadData = await uploadResponse.json();
-            docContent = uploadData.content; // e.g., filename or processed text
+            docContent = uploadData.content; // Extracted text or filename
             setDocumentContent(docContent);
-            setUploadedFile(null); // clear file after upload
+            setUploadedFile(null);
             setUploadLoading(false);
         }
-
-        // Append user's message to chat history.
-        // If only a file was uploaded, show a message indicating the file was sent.
+    
+        // Construct the message to send
         const userMessage = message.trim()
             ? message.trim()
             : docContent
                 ? `Uploaded Document: ${docContent}`
                 : '';
+    
         const newMessage = { role: 'user', content: userMessage };
         const updatedChat = [...chatHistory, newMessage];
         setChatHistory(updatedChat);
         setMessage('');
-
+    
         setLoading(true);
-        // Send chat history along with the document content if available.
-        const response = await fetch('/api/chat', {
+    
+        // 🔹 Call the Gemini API
+        const response = await fetch('/api/gemini', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat: updatedChat, document: docContent }),
+            body: JSON.stringify({
+                chat: updatedChat,
+                document: docContent
+            }),
         });
+    
         const data = await response.json();
-        setChatHistory([...updatedChat, { role: 'ai', content: data.reply }]);
+    
+        // Update chat history with AI response
+        if (data && data.reply) {
+            setChatHistory([...updatedChat, { role: 'ai', content: data.reply }]);
+        } else {
+            setChatHistory([...updatedChat, { role: 'ai', content: "Sorry, I couldn't generate a response." }]);
+        }
+    
         setLoading(false);
     };
+    
 
     return (
         <div className="min-h-screen bg-[#e7dece] text-[#000000] flex flex-col items-center justify-center p-8">
