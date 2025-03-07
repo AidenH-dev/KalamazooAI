@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MdOutlineFileUpload } from "react-icons/md";
 import { LuArrowBigRightDash } from "react-icons/lu";
 
@@ -11,6 +11,37 @@ const Chatbot = () => {
     const [documentContent, setDocumentContent] = useState(null);
     const [docType, setDocType] = useState("Financial Aid");
     const fileInputRef = useRef(null);
+
+    // 🔹 Send an initial message when the chatbot loads
+    useEffect(() => {
+        const sendInitialMessage = async () => {
+            const initialPrompt = "Hello, I am your AI assistant. How can I help you today?"; // Hardcoded message
+
+            const initialMessage = { role: 'user', content: initialPrompt };
+            setChatHistory([initialMessage]);
+
+            try {
+                const response = await fetch('/api/gemini', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat: [initialMessage] }),
+                });
+
+                const data = await response.json();
+
+                if (data.reply) {
+                    setChatHistory([
+                        initialMessage,
+                        { role: 'ai', content: data.reply }
+                    ]);
+                }
+            } catch (error) {
+                console.error("🔴 Initial AI Message Error:", error);
+            }
+        };
+
+        sendInitialMessage();
+    }, []); // Runs once when the component mounts
 
     // Handle file selection from the hidden file input
     const handleFileChange = (e) => {
@@ -77,7 +108,6 @@ const Chatbot = () => {
     
         setLoading(false);
     };
-    
 
     return (
         <div className="min-h-screen bg-[#e7dece] text-[#000000] flex flex-col items-center justify-center p-8">
@@ -88,7 +118,7 @@ const Chatbot = () => {
                     className="w-10 h-10 mr-2"
                 />
                 <span style={{ fontFamily: 'Chapaza Regular' }}>
-                    alamazoo Lightyear AI
+                    Kalamazoo Lightyear AI
                 </span>
             </h1>
 
@@ -147,7 +177,7 @@ const Chatbot = () => {
                 )}
             </div>
 
-            {/* Message Bar with integrated file upload inside the input field */}
+            {/* Message Bar */}
             <form onSubmit={handleSend} className="w-full max-w-3xl flex items-center">
                 <div className="relative flex-1">
                     <input
@@ -156,19 +186,6 @@ const Chatbot = () => {
                         placeholder="Type a message..."
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                    />
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current.click()}
-                        className="absolute left-1.5 top-1/2 transform -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-[#FBFBFB] hover:bg-transparent hover:border-2 hover:border-[#EA681F] transition-colors duration-200"
-                    >
-                        <MdOutlineFileUpload className="text-2xl" />
-                    </button>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        className="hidden"
                     />
                 </div>
                 <button
@@ -179,11 +196,6 @@ const Chatbot = () => {
                     <LuArrowBigRightDash className="text-3xl" />
                 </button>
             </form>
-
-            {/* Display selected file name if a file is chosen */}
-            {uploadedFile && (
-                <p className="mt-2 text-sm text-[#717171]">File selected: {uploadedFile.name}</p>
-            )}
         </div>
     );
 };
