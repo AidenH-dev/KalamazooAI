@@ -12,37 +12,6 @@ const Chatbot = () => {
     const [docType, setDocType] = useState("Financial Aid");
     const fileInputRef = useRef(null);
 
-    // Send an initial message when the chatbot loads
-    useEffect(() => {
-        const sendInitialMessage = async () => {
-            const initialPrompt = "Hello, I am your AI assistant. How can I help you today?"; // Hardcoded message
-
-            const initialMessage = { role: 'user', content: initialPrompt };
-            setChatHistory([initialMessage]);
-
-            try {
-                const response = await fetch('/api/gemini', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat: [initialMessage] }),
-                });
-
-                const data = await response.json();
-
-                if (data.reply) {
-                    setChatHistory([
-                        initialMessage,
-                        { role: 'ai', content: data.reply }
-                    ]);
-                }
-            } catch (error) {
-                console.error("Initial AI Message Error:", error);
-            }
-        };
-
-        sendInitialMessage();
-    }, []); // Runs once when the component mounts
-
     // Handle file selection from the hidden file input
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
