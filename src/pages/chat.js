@@ -187,6 +187,19 @@ const Chatbot = () => {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                     />
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current.click()}
+                        className="absolute left-1.5 top-1/2 transform -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-[#FBFBFB] hover:bg-transparent hover:border-2 hover:border-[#EA681F] transition-colors duration-200"
+                    >
+                        <MdOutlineFileUpload className="text-2xl" />
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
                 </div>
                 <button
                     type="submit"
