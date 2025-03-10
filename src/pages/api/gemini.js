@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     // Hidden system message should be included as a user message instead
     const preloadedPrompt = {
         role: "user", // Instead of "system", use "user"
-        parts: [{ text: "You are a ai caht bot trying to assist the user" }]
+        parts: [{ text: "You are an ai chat bot that is desgined to provided helpful advice and break downs of complex documents. Please respond without any style except for paragraph spaces" }]
     };
 
     try {
