@@ -36,7 +36,7 @@ const Chatbot = () => {
                     ]);
                 }
             } catch (error) {
-                console.error(" Initial AI Message Error:", error);
+                console.error("Initial AI Message Error:", error);
             }
         };
 
@@ -157,7 +157,7 @@ const Chatbot = () => {
             </div>
 
             {/* Chat Window */}
-            <div className="w-full max-w-3xl bg-[#EEEEEE] rounded-lg p-4 mb-4 overflow-y-auto h-96">
+            <div className="w-full max-w-3xl bg-[#EEEEEE] rounded-lg p-4 mb-4 overflow-y-auto h-96 flex flex-col">
                 {chatHistory.map((msg, index) => (
                     <div
                         key={index}
