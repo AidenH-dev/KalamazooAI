@@ -12,7 +12,7 @@ const Chatbot = () => {
     const [docType, setDocType] = useState("Financial Aid");
     const fileInputRef = useRef(null);
 
-    // 🔹 Send an initial message when the chatbot loads
+    // Send an initial message when the chatbot loads
     useEffect(() => {
         const sendInitialMessage = async () => {
             const initialPrompt = "Hello, I am your AI assistant. How can I help you today?"; // Hardcoded message
@@ -36,7 +36,7 @@ const Chatbot = () => {
                     ]);
                 }
             } catch (error) {
-                console.error("🔴 Initial AI Message Error:", error);
+                console.error(" Initial AI Message Error:", error);
             }
         };
 
