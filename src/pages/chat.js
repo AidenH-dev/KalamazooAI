@@ -1,48 +1,33 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { MdOutlineFileUpload } from "react-icons/md";
 import { LuArrowBigRightDash } from "react-icons/lu";
 import mammoth from "mammoth";
 
+const initialPrompts = {
+  "Financial Aid": "You are a financial aid expert. Please provide guidance on financial aid applications and scholarships.",
+  "Study Abroad": "You are a study abroad advisor. Provide insights and advice on international education, visa processes, and cultural adjustment.",
+  "Lease Agreements": "You are an expert on lease agreements. Provide clear legal insights and guidance for rental contracts and tenant rights."
+};
+
 const Chatbot = () => {
-    const [message, setMessage] = useState('');
-    const [chatHistory, setChatHistory] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [uploadedFile, setUploadedFile] = useState(null);
-    const [uploadLoading, setUploadLoading] = useState(false);
-    const [documentContent, setDocumentContent] = useState(null);
-    const [docType, setDocType] = useState("Financial Aid");
-    const fileInputRef = useRef(null);
+  const [message, setMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [documentContent, setDocumentContent] = useState(null);
+  const [docType, setDocType] = useState("Financial Aid");
+  const fileInputRef = useRef(null);
 
-    // Send an initial message when the chatbot loads
-    useEffect(() => {
-        const sendInitialMessage = async () => {
-            const initialPrompt = "Hello, I am your AI assistant. How can I help you today?"; // Hardcoded message
-
-            const initialMessage = { role: 'user', content: initialPrompt };
-            setChatHistory([initialMessage]);
-
-            try {
-                const response = await fetch('/api/gemini', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat: [initialMessage] }),
-                });
-
-                const data = await response.json();
-
-                if (data.reply) {
-                    setChatHistory([
-                        initialMessage,
-                        { role: 'ai', content: data.reply }
-                    ]);
-                }
-            } catch (error) {
-                console.error("Initial AI Message Error:", error);
-            }
-        };
-
-        sendInitialMessage();
-    }, []); // Runs once when the component mounts
+  // Helper to reinitialize chat with a new system prompt based on document type
+  const handleDocTypeChange = (newType) => {
+    setDocType(newType);
+    // Reset chat history with a new system prompt (this remains locally)
+    setChatHistory([{ role: 'system', content: initialPrompts[newType] }]);
+    setMessage('');
+    setDocumentContent(null);
+    setUploadedFile(null);
+  };
 
   // Handle file selection from the hidden file input
   const handleFileChange = async (e) => {
@@ -50,12 +35,11 @@ const Chatbot = () => {
       const file = e.target.files[0];
       let extractedText = '';
 
-      // Check supported file types: text, PDF, Word
+      // Handle plain text files
       if (
         file.type.startsWith("text/") ||
         /\.(txt|md|json)$/i.test(file.name)
       ) {
-        // For plain text files
         const reader = new FileReader();
         reader.onload = (event) => {
           extractedText = event.target.result;
@@ -96,11 +80,10 @@ const Chatbot = () => {
   // Handle sending the chat message (and file, if one was selected)
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!message.trim() && !uploadedFile) return; // Prevent sending empty messages
+    if (!message.trim() && !uploadedFile) return;
 
     let docContent = documentContent;
 
-    // If a file is selected, upload it first
     if (uploadedFile) {
       setUploadLoading(true);
       const formData = new FormData();
@@ -110,13 +93,12 @@ const Chatbot = () => {
         body: formData,
       });
       const uploadData = await uploadResponse.json();
-      docContent = uploadData.content; // Extracted text or filename from backend
+      docContent = uploadData.content;
       setDocumentContent(docContent);
       setUploadedFile(null);
       setUploadLoading(false);
     }
 
-    // Construct the message to send
     const userMessage = message.trim()
       ? message.trim()
       : docContent
@@ -130,20 +112,24 @@ const Chatbot = () => {
 
     setLoading(true);
 
-    // Call the Gemini API
+    // Prepare the chat payload by filtering out "system" messages and mapping "ai" to "model"
+    const chatForAPI = updatedChat
+      .filter(msg => msg.role !== 'system')
+      .map(msg => msg.role === 'ai' ? { ...msg, role: 'model' } : msg);
+
     const response = await fetch('/api/gemini', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat: updatedChat,
+        chat: chatForAPI,
         document: docContent
       }),
     });
 
     const data = await response.json();
 
-    // Update chat history with AI response
     if (data && data.reply) {
+      // Append the API response using a local role of "ai"
       setChatHistory([...updatedChat, { role: 'ai', content: data.reply }]);
     } else {
       setChatHistory([...updatedChat, { role: 'ai', content: "Sorry, I couldn't generate a response." }]);
@@ -168,7 +154,7 @@ const Chatbot = () => {
       {/* Mini Horizontal Button Dashboard */}
       <div className="flex space-x-4 mb-6">
         <button
-          onClick={() => setDocType("Financial Aid")}
+          onClick={() => handleDocTypeChange("Financial Aid")}
           className={`px-4 py-2 rounded-full text-sm transition-colors ${
             docType === "Financial Aid"
               ? "bg-[#EA681F] text-white"
@@ -178,7 +164,7 @@ const Chatbot = () => {
           Financial Aid
         </button>
         <button
-          onClick={() => setDocType("Study Abroad")}
+          onClick={() => handleDocTypeChange("Study Abroad")}
           className={`px-4 py-2 rounded-full text-sm transition-colors ${
             docType === "Study Abroad"
               ? "bg-[#EA681F] text-white"
@@ -188,7 +174,7 @@ const Chatbot = () => {
           Study Abroad
         </button>
         <button
-          onClick={() => setDocType("Lease Agreements")}
+          onClick={() => handleDocTypeChange("Lease Agreements")}
           className={`px-4 py-2 rounded-full text-sm transition-colors ${
             docType === "Lease Agreements"
               ? "bg-[#EA681F] text-white"
@@ -210,7 +196,14 @@ const Chatbot = () => {
                 : 'bg-[#FBFBFB] text-[#000000] self-start text-left'
             }`}
           >
-            <strong>{msg.role === 'user' ? 'You' : 'AI'}:</strong> {msg.content}
+            <strong>
+              {msg.role === 'user'
+                ? 'You'
+                : msg.role === 'system'
+                  ? 'System'
+                  : 'AI'}
+              :
+            </strong> {msg.content}
           </div>
         ))}
         {loading && (
